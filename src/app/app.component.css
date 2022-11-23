@@ -1,0 +1,19 @@
+.information_map{
+    display: flex;
+    width: 1000px;
+    height: 800px;
+}
+.myButton {
+    display: flex;
+    background: #FF7308;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 250px;
+    height: 40px;
+    font-family: 'Montserrat';
+    line-height: 15.85px;
+    font-size: 12px;
+    color: white;
+    cursor: pointer;
+}
