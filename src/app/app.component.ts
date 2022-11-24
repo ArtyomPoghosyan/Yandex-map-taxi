@@ -34,6 +34,7 @@ export class AppComponent implements OnInit {
   public currentlocation: any;
   public address: any
   public mobilelog: any = {}
+  public gg:any
 
   constructor() {
     this._inItYandexMap = this._inItYandexMap.bind(this);
@@ -42,10 +43,10 @@ export class AppComponent implements OnInit {
 
   public ngOnInit(): void {
 
+    ymaps.ready(this._inItYandexMap);
     this.lifeGeoLocation();
     this.watchPosition();
     this.socketConnectionOnMessage();
-    ymaps.ready(this._inItYandexMap)
 
   }
 
@@ -73,19 +74,54 @@ export class AppComponent implements OnInit {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude
       }
-      let y = [latitude, longitude]
+      var geolocationss = [latitude, longitude]
+
+      // var myReverseGeocoder = ymaps.geocode(geolocation);
+      // console.log(myReverseGeocoder._value.geoObjects)
+      ymaps.geocode([latitude, longitude]).then((res: any) => {
+        console.log(res.geoObjects?.get(0).properties._data.text)
+        let geoAddress = res.geoObjects?.get(0).properties._data.text 
+        console.log(geoAddress)     
+        this.control?.routePanel?.state.set({
+          fromEnabled: true,
+          from:geoAddress,
+          type: "auto"
+        })
+      })
+
       if (this.myPlacemark) {
-        this.myPlacemark.geometry.setCoordinates(y);
-        ymaps.Placemark(y)
+        ymaps.geocode(geolocationss).then((res: any) => {
+          console.log(res.geoObjects?.get(0).properties._data.text)
+          let geoAddress = res.geoObjects?.get(0).properties._data.text 
+          console.log(geoAddress)   
+          this.gg=  geoAddress
+          console.log(this.gg)
+          this.control?.routePanel?.state.set({
+            fromEnabled: false,
+            from:geoAddress,
+            type: "auto"
+          })
+        })
+        
+        this.myPlacemark?.geometry.setCoordinates(geolocationss);
+        console.log(geolocationss)
+        ymaps.Placemark(geolocationss)
+        // this.myPlacemark.events.add('locationchange', (e: any) => {
+        //   console.log(e)
+        // })
+        // this.myMap.controls.add()
+        // this.control.routePanel.state.set({
+        //   from: this.from,
+        // })
       } else {
-        this.myPlacemark = this._createPlacemark(y);
-        this.myMap.setCenter(y);
+        this.myPlacemark = this._createPlacemark(geolocationss);
+        this.myMap.setCenter(geolocationss);
         this.myMap.geoObjects.add(this.myPlacemark);
         this.myPlacemark.events.add('dragend', () => {
           this._getAddress(this.myPlacemark.geometry.getCoordinates());
         });
       }
-      this._getAddress(y);
+      this._getAddress(geolocationss);
       if (position.coords.latitude == desLat) {
         navigator.geolocation.clearWatch(id);
       }
@@ -105,7 +141,7 @@ export class AppComponent implements OnInit {
     // CONNECTION TO MAP
     var geolocation = ymaps.geolocation;
     this.myMap = new ymaps.Map('information_map', {
-      center: [latitudes, longitudes],
+      center: [this.mobilelog],
       zoom: 9,
       controls: ["routePanelControl"]
     }, {
@@ -119,6 +155,7 @@ export class AppComponent implements OnInit {
       data: { content: 'Определить местоположение', image: 'none' },
       options: { noPlacemark: true, maxWidth: [30, 100, 250], position: { left: 150, top: 650 } }
     });
+    console.log(geolocationControl)
     this.myMap.controls.add(geolocationControl);
     geolocationControl.events.add('locationchange', (e: any) => {
       let latitude = this.mobilelog.latitude;
@@ -128,6 +165,7 @@ export class AppComponent implements OnInit {
       this.myMap.panTo([latitude, longitude]);
       this.detectMyCurrentPlaceLocaion = e.get('position')
       ymaps.geocode(this.detectMyCurrentPlaceLocaion).then((res: any) => {
+        console.log(res.geoObjects, "555555555")
         this.from = res.geoObjects.get(0).properties._data.text;
         this.from_location = {
           form: this.from,
@@ -142,9 +180,9 @@ export class AppComponent implements OnInit {
         //     longitude
         //   }
         // })
-        this.control.routePanel.state.set({
-          from: this.from,
-        })
+        // this.control.routePanel.state.set({
+        //   from: this.from,
+        // })
       })
     });
 
@@ -152,6 +190,7 @@ export class AppComponent implements OnInit {
 
     this.myMap.events.add('click', (e: any) => {
       const [latitude, longitude] = e.get('coords');
+      console.log(latitude)
       this._placemark(e.get('coords'))
       ymaps.geocode(e.get('coords')).then((res: any) => {
         this.to = res.geoObjects.get(0).properties._data.text
@@ -201,6 +240,7 @@ export class AppComponent implements OnInit {
           // self.socket.emit("location", {
           // tripData
           // })
+          console.log(tripData)
 
         }
       });
@@ -208,7 +248,7 @@ export class AppComponent implements OnInit {
       console.log(err);
     })
 
-    //Get geoLocation via Browser
+    // Get geoLocation via Browser
     geolocation.get({
       provider: 'browser',
       mapStateAutoApply: true
